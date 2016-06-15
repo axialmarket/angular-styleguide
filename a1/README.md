@@ -723,6 +723,10 @@ While this guide explains the *what*, *why* and *how*, I find it helpful to see 
   </div>
   ```
 
+### Prefer responding to changes published through native digest over triggering/listening to events
+###### [Style [Y039](#style-y039)]
+
+
 **[Back to top](#table-of-contents)**
 
 ## Services
@@ -761,6 +765,10 @@ While this guide explains the *what*, *why* and *how*, I find it helpful to see 
      };
   }
   ```
+
+### Access data in services through getters and setters
+###### [Style [Y041](#style-y041)]
+
 
 **[Back to top](#table-of-contents)**
 
@@ -1360,6 +1368,16 @@ While this guide explains the *what*, *why* and *how*, I find it helpful to see 
   <div>min={{vm.min}}<input ng-model="vm.min"/></div>
   ```
 
+### Directives and Data
+###### [Style [Y077](#style-y077)]
+
+  - Prefer passing primary data in to directives over fetching it.
+
+### Directive Templates
+###### [Style [Y078](#style-y078)]
+
+  - Avoid setting services to variables on directive controllers and using in templates.
+
 **[Back to top](#table-of-contents)**
 
 ## Resolving Promises
@@ -1710,118 +1728,6 @@ While this guide explains the *what*, *why* and *how*, I find it helpful to see 
 
 **[Back to top](#table-of-contents)**
 
-## Minification and Annotation
-
-### ng-annotate
-###### [Style [Y100](#style-y100)]
-
-  - Use [ng-annotate](//github.com/olov/ng-annotate) for [Gulp](http://gulpjs.com) or [Grunt](http://gruntjs.com) and comment functions that need automated dependency injection using `/* @ngInject */`
-
-    *Why?*: This safeguards your code from any dependencies that may not be using minification-safe practices.
-
-    *Why?*: [`ng-min`](https://github.com/btford/ngmin) is deprecated
-
-    >I prefer Gulp as I feel it is easier to write, to read, and to debug.
-
-    The following code is not using minification safe dependencies.
-
-    ```javascript
-    angular
-        .module('app')
-        .controller('AvengersController', AvengersController);
-
-    /* @ngInject */
-    function AvengersController(storage, avengerService) {
-        var vm = this;
-        vm.heroSearch = '';
-        vm.storeHero = storeHero;
-
-        function storeHero() {
-            var hero = avengerService.find(vm.heroSearch);
-            storage.save(hero.name, hero);
-        }
-    }
-    ```
-
-    When the above code is run through ng-annotate it will produce the following output with the `$inject` annotation and become minification-safe.
-
-    ```javascript
-    angular
-        .module('app')
-        .controller('AvengersController', AvengersController);
-
-    /* @ngInject */
-    function AvengersController(storage, avengerService) {
-        var vm = this;
-        vm.heroSearch = '';
-        vm.storeHero = storeHero;
-
-        function storeHero() {
-            var hero = avengerService.find(vm.heroSearch);
-            storage.save(hero.name, hero);
-        }
-    }
-
-    AvengersController.$inject = ['storage', 'avengerService'];
-    ```
-
-    Note: If `ng-annotate` detects injection has already been made (e.g. `@ngInject` was detected), it will not duplicate the `$inject` code.
-
-    Note: When using a route resolver you can prefix the resolver's function with `/* @ngInject */` and it will produce properly annotated code, keeping any injected dependencies minification safe.
-
-    ```javascript
-    // Using @ngInject annotations
-    function config($routeProvider) {
-        $routeProvider
-            .when('/avengers', {
-                templateUrl: 'avengers.html',
-                controller: 'AvengersController',
-                controllerAs: 'vm',
-                resolve: { /* @ngInject */
-                    moviesPrepService: function(movieService) {
-                        return movieService.getMovies();
-                    }
-                }
-            });
-    }
-    ```
-
-    > Note: Starting from Angular 1.3 you can use the [`ngApp`](https://docs.angularjs.org/api/ng/directive/ngApp) directive's `ngStrictDi` parameter to detect any potentially missing minification safe dependencies. When present the injector will be created in "strict-di" mode causing the application to fail to invoke functions which do not use explicit function annotation (these may not be minification safe). Debugging info will be logged to the console to help track down the offending code. I prefer to only use `ng-strict-di` for debugging purposes only.
-    `<body ng-app="APP" ng-strict-di>`
-
-### Use Gulp or Grunt for ng-annotate
-###### [Style [Y101](#style-y101)]
-
-  - Use [gulp-ng-annotate](https://www.npmjs.com/package/gulp-ng-annotate) or [grunt-ng-annotate](https://www.npmjs.com/package/grunt-ng-annotate) in an automated build task. Inject `/* @ngInject */` prior to any function that has dependencies.
-
-    *Why?*: ng-annotate will catch most dependencies, but it sometimes requires hints using the `/* @ngInject */` syntax.
-
-    The following code is an example of a gulp task using ngAnnotate
-
-    ```javascript
-    gulp.task('js', ['jshint'], function() {
-        var source = pkg.paths.js;
-
-        return gulp.src(source)
-            .pipe(sourcemaps.init())
-            .pipe(concat('all.min.js', {newLine: ';'}))
-            // Annotate before uglify so the code get's min'd properly.
-            .pipe(ngAnnotate({
-                // true helps add where @ngInject is not used. It infers.
-                // Doesn't work with resolve, so we must be explicit there
-                add: true
-            }))
-            .pipe(bytediff.start())
-            .pipe(uglify({mangle: true}))
-            .pipe(bytediff.stop())
-            .pipe(sourcemaps.write('./'))
-            .pipe(gulp.dest(pkg.paths.dev));
-    });
-
-    ```
-
-**[Back to top](#table-of-contents)**
-
 ## Exception Handling
 
 ### decorators
@@ -2067,7 +1973,7 @@ While this guide explains the *what*, *why* and *how*, I find it helpful to see 
 ### Controller Name Suffix
 ###### [Style [Y124](#style-y124)]
 
-  - Append the controller name with the suffix `Controller`.
+  - Append the controller name with the suffix `Controller` (`Ctrl` is also acceptable).
 
     *Why?*: The `Controller` suffix is more commonly used and is more explicitly descriptive.
 
@@ -2662,39 +2568,6 @@ Unit testing helps maintain clean code, as such I included some of my recommenda
                              /customers.route.js
                              /customers.route.spec.js
     ```
-
-**[Back to top](#table-of-contents)**
-
-## Animations
-
-### Usage
-###### [Style [Y210](#style-y210)]
-
-  - Use subtle [animations with Angular](https://docs.angularjs.org/guide/animations) to transition between states for views and primary visual elements. Include the [ngAnimate module](https://docs.angularjs.org/api/ngAnimate). The 3 keys are subtle, smooth, seamless.
-
-    *Why?*: Subtle animations can improve User Experience when used appropriately.
-
-    *Why?*: Subtle animations can improve perceived performance as views transition.
-
-### Sub Second
-###### [Style [Y211](#style-y211)]
-
-  - Use short durations for animations. I generally start with 300ms and adjust until appropriate.
-
-    *Why?*: Long animations can have the reverse effect on User Experience and perceived performance by giving the appearance of a slow application.
-
-### animate.css
-###### [Style [Y212](#style-y212)]
-
-  - Use [animate.css](http://daneden.github.io/animate.css/) for conventional animations.
-
-    *Why?*: The animations that animate.css provides are fast, smooth, and easy to add to your application.
-
-    *Why?*: Provides consistency in your animations.
-
-    *Why?*: animate.css is widely used and tested.
-
-    Note: See this [great post by Matias Niemelä on Angular animations](http://www.yearofmoo.com/2013/08/remastered-animation-in-angularjs-1-2.html)
 
 **[Back to top](#table-of-contents)**
 
